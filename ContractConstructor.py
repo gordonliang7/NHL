@@ -3,15 +3,6 @@ from util import *
 from dash import Dash, dcc, html, dash_table, Input, Output, State, callback_context
 import dash_bootstrap_components as dbc
 
-
-def playerData(playerId, data = 'summary'):
-    query = f'https://api.nhle.com/stats/rest/en/skater/{data}?limit=-1&cayenneExp= playerId = {playerId} and gameTypeId = 2 and seasonId > 20082009'
-    df = pd.DataFrame(ask(query)['data'])
-    df['sznStart'] = df['seasonId']//10000
-    df['sznEnd'] = df['seasonId'] % 10000
-    return df.sort_values('seasonId')
-
-
 cols = [i + indexCols for i in [sumCols, scoringCols, gfaCols, sumshootCols, penCols]]
 
 
@@ -26,14 +17,9 @@ def playerToStats(playerId):
 
 
 def df_model_prep(df):
-    #print(df)
     seasons = list(df['seasonId'])
     df = df.drop(columns = ['playerId']).sort_values('seasonId').set_index('seasonId')
-    #print(df)
-    #print(df.columns.values)
     df = (df - sznMeans) / sznSTDs
-    #print(df)
-    #print(df.columns.values)
     return df.filter(items = seasons, axis = 0)
 
 
@@ -44,7 +30,7 @@ def playerToInfo(playerID):
     stats = playerToStats(playerID)
     position = data['position']
     pred = forward_UFA.run(df_model_prep(stats))
-    cap_perc, term = float(pred[0]), max([float(pred[1]), 1])
+    cap_perc, term = float(pred[0]), min([max([float(pred[1]), 1]),8])
     aav = max([cap_perc*cap_history[20242025], 750000])
     return {'image_src': image_src,
             'stats': stats.to_dict('records'),
@@ -56,6 +42,7 @@ def playerToInfo(playerID):
 
 
 def makeInterface(data):
+    '''Given data from playerToInfo, create interface'''
     stats = []
     for year in data['stats']:
         year_line = year.copy()
@@ -66,7 +53,7 @@ def makeInterface(data):
         year_line['timeOnIcePerGame'] =f'{TOI//60}:{TOI%60}'
         stats += [year_line]
     stats_table = dash_table.DataTable(stats,
-                                       table_cols,
+                                       make_col_list(list(stats[0].keys())),
                                        style_table={'overflowX': 'auto'})
     row_one = dbc.Row([dbc.Col([html.H1(f"{data['Name']} ({data['position']})", style={'fontSize': '24px',
                                                                                        'color': '#333', 'textAlign':

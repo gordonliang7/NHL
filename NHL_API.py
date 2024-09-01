@@ -13,7 +13,10 @@ def readThrough(lst,key):
 def ask(link):
     '''Input: Link (str)
     Output: Json of Info (dict)'''
-    return get(link).json()
+    response = get(link)
+    if response.status_code != 200:
+        return None
+    return response.json()
 
 
 def form(num):
@@ -89,3 +92,12 @@ def getGame(gameID):
     query = f'https://api-web.nhle.com/v1/gamecenter/{gameID}/play-by-play'
     return ask(query)
 
+def playerData(playerId, data = 'summary'):
+    query = f'https://api.nhle.com/stats/rest/en/skater/{data}?limit=-1&cayenneExp= playerId = {playerId} and gameTypeId = 2 and seasonId > 20082009'
+    df = pd.DataFrame(ask(query)['data'])
+    df['sznStart'] = df['seasonId']//10000
+    df['sznEnd'] = df['seasonId'] % 10000
+    return df.sort_values('seasonId')
+
+#def getPlayerData(data, player):
+#
