@@ -53,7 +53,7 @@ def doHome(data):
     return f'{res} vs {data["awayTeam"]["abbrev"]} ({data["gameDate"]})'
 
 def getRoster(team, forwards = True, defensemen = False, goalies = False, filter_out = True):
-    data = ask(f'https://api-web.nhle.com/v1/roster/{team}/20232024')
+    data = ask(f'https://api-web.nhle.com/v1/roster/{team}/current')
     roster = []
     extract = lambda x: [{'Player ID': i['id'], 'Name': i['firstName']['default'] + ' ' + i['lastName']['default'],
                           '#': i.get('sweaterNumber', 'NA')} for i in x]
